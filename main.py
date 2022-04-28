@@ -15,9 +15,10 @@ app = Flask(__name__)
 cors = CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
 
-def transform(URL, img_size = 320):
+def transform(URL, img_size = 320, int8 = False):
+    int_type = np.int8 if int8 else np.float32
     img = io.imread(URL)
-    im = cv2.resize(img, (img_size, img_size)).astype(np.float32)
+    im = cv2.resize(img, (img_size, img_size), 3).astype(int_type)
     im = np.expand_dims(im, axis=0)/255.0
     return img, im
 
@@ -25,8 +26,12 @@ def transform(URL, img_size = 320):
 def urlRoute():
 
     URL = request.form['url']
-    YOLO = Yolo(model_path = 'tflite_models/custom01.tflite', CLASSES = CLASSES)
+    int8 = request.form['int8']
+    int8 = bool(int8)
     img, im = transform(URL)
+
+    MODEL_PATH = 'tflite_models/custom_int800.tflite' if int8 else 'tflite_models/custom01.tflite'
+    YOLO = Yolo(model_path = MODEL_PATH, CLASSES = CLASSES, int8 = int8)
 
     H = img.shape[0]
     W = img.shape[1]

@@ -2,7 +2,8 @@ import tensorflow as tf
 import numpy as np
 
 class Yolo:
-    def __init__(self, model_path, CLASSES):
+    def __init__(self, model_path, CLASSES, int8 = False):
+        self.int8 = int8
         self.CLASSES = CLASSES
         Interpreter = tf.lite.Interpreter
         self.interpreter = Interpreter(model_path=model_path)
@@ -11,9 +12,16 @@ class Yolo:
         self.output_details = self.interpreter.get_output_details()
 
     def pred(self, im):
+        input, output = self.input_details[0], self.output_details[0]
+        if self.int8:
+            scale, zero_point = input['quantization']
+            im = (im / scale + zero_point).astype(np.uint8)
         self.interpreter.set_tensor(self.input_details[0]['index'], im)
         self.interpreter.invoke()
         self.output_data = self.interpreter.get_tensor(self.output_details[0]['index'])
+        if self.int8:
+            scale, zero_point = output['quantization']
+            self.output_data = (self.output_data.astype(np.float32) - zero_point) * scale  # re-scale
 
     def classFilter(self, classdata):
         classes = []
