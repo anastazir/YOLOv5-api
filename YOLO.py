@@ -61,8 +61,15 @@ class Yolo:
             coordinates.append([xmin, ymin, xmax, ymax])
             class_names.append(self.CLASSES[self.classes[i]])
             class_scores.append(int(scores[i] * 100))
-            final = np.column_stack((coordinates,class_names,class_scores))
-            final = np.squeeze(final)
+
+        for coordinate, class_name, class_score in zip(coordinates, class_names, class_scores):
+            final.append(
+                [
+                    coordinate,
+                    class_score,
+                    class_name,
+                ]
+            )
 
         return {"class_names": class_names,
                 "class_scores": class_scores,
