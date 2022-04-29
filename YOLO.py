@@ -43,6 +43,7 @@ class Yolo:
         class_names = []
         class_scores = []
         coordinates = []
+        final = []
         for i in bbox:
             xmin = int(self.xyxy[0][i] * W)
             ymin = int(self.xyxy[1][i] * H)
@@ -60,10 +61,13 @@ class Yolo:
             coordinates.append([xmin, ymin, xmax, ymax])
             class_names.append(self.CLASSES[self.classes[i]])
             class_scores.append(int(scores[i] * 100))
+            final = np.column_stack((coordinates,class_names,class_scores))
+            final = np.squeeze(final)
 
-        return {"data": {"class_names": class_names,
-                         "class_scores": class_scores,
-                         "coordinates": coordinates}}
+        return {"class_names": class_names,
+                "class_scores": class_scores,
+                "coordinates": coordinates,
+                "final": final}
 
     def return_bbox(self, scores, score_threshold = 0.65, max_size = 10, iou_threshold = 0.5):
         bbox = tf.image.non_max_suppression(np.squeeze(self.output_data[..., :4]), scores, max_output_size=max_size, \
