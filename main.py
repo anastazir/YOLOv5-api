@@ -26,8 +26,9 @@ def transform(URL, img_size = 320, int8 = False):
 def urlRoute():
 
     URL = request.form['url']
-    int8 = request.form['int8']
-    int8 = bool(int8)
+
+    int8 = True if request.form['int8'] == 'True' else False
+
     img, im = transform(URL)
 
     MODEL_PATH = 'tflite_models/custom_int800.tflite' if int8 else 'tflite_models/custom01.tflite'
@@ -35,13 +36,13 @@ def urlRoute():
 
     H = img.shape[0]
     W = img.shape[1]
+
     YOLO.pred(im)
+    YOLO.extract_results()
+    YOLO.return_bbox()
+    data = YOLO.return_results(H, W)
 
-    scores = YOLO.YOLOdetect()
-    bbox = YOLO.return_bbox(scores)
-    data = YOLO.return_results(scores, bbox, H, W)
-
-    del YOLO, bbox, scores
+    del YOLO
 
     return data
 

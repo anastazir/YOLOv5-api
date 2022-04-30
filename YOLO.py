@@ -15,6 +15,7 @@ class Yolo:
         '''
         im: image in the form of normalized numpy array
         '''
+
         input, output = self.input_details[0], self.output_details[0]
         if self.int8:
             scale, zero_point = input['quantization']
@@ -30,24 +31,26 @@ class Yolo:
         '''
         returns the index of the class with highest probability score
         '''
+
         classes = []
         for i in range(classdata.shape[0]):
             classes.append(classdata[i].argmax())
         return classes    
 
-    def YOLOdetect(self):
+    def extract_results(self):
         '''
         extract scores, class probabilities and bounding boxes from the output tensor
         '''
+
         output_data = self.output_data[0]
         boxes = np.squeeze(output_data[..., :4]) # the first 4 elements are contain box coordinates
-        scores = np.squeeze(output_data[..., 4:5]) # the 5th element is the confidence score
+        self.scores = np.squeeze(output_data[..., 4:5]) # the 5th element is the confidence score
         self.classes = self.classFilter(output_data[..., 5:]) # the remaining elements are class probabilities
         x, y, w, h = boxes[..., 0], boxes[..., 1], boxes[..., 2], boxes[..., 3] # extract the coordinates of the bounding boxes
         self.xyxy = [x - w / 2, y - h / 2, x + w / 2, y + h / 2] # convert xywh to xyxy
-        return scores
+        return self.scores
 
-    def return_results(self, scores, bbox, H, W):
+    def return_results(self, H, W):
         ''''
         return the results in the form of json
         '''
@@ -55,11 +58,12 @@ class Yolo:
         class_scores = []
         coordinates = []
         final = []
-        for i in bbox:
+        for i in self.bbox_index:
             xmin = int(self.xyxy[0][i] * W)
             ymin = int(self.xyxy[1][i] * H)
             xmax = int(self.xyxy[2][i] * W)
             ymax = int(self.xyxy[3][i] * H)
+
             if xmin < 0:
                 xmin = 0
             if ymin > H - 1:
@@ -71,7 +75,7 @@ class Yolo:
 
             coordinates.append([xmin, ymin, xmax, ymax])
             class_names.append(self.CLASSES[self.classes[i]])
-            class_scores.append(int(scores[i] * 100))
+            class_scores.append(int(self.scores[i] * 100))
 
         for coordinate, class_name, class_score in zip(coordinates, class_names, class_scores):
             final.append(
@@ -87,11 +91,12 @@ class Yolo:
                 "coordinates": coordinates,
                 "final": final}
 
-    def return_bbox(self, scores, score_threshold = 0.65, max_size = 10, iou_threshold = 0.5):
+    def return_bbox(self, score_threshold = 0.65, max_size = 10, iou_threshold = 0.5):
         '''
         filters bounding boxes based on the score threshold and the maximum size to prevent overlapping boxes.
-        Returns indexes of the bounding boxes
         '''
-        bbox = tf.image.non_max_suppression(np.squeeze(self.output_data[..., :4]), scores, max_output_size=max_size, \
+
+        self.bbox_index = tf.image.non_max_suppression(np.squeeze(self.output_data[..., :4]), self.scores, max_output_size=max_size, \
                iou_threshold=iou_threshold, score_threshold = score_threshold)
-        return np.array(bbox)
+        self.bbox_index = np.array(self.bbox_index)
+        return self.bbox_index
