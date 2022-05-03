@@ -34,15 +34,22 @@ def transform(URL, img_size = 320, int8 = False):
 @app.route('/urlRoute', methods=['POST'])
 def urlRoute():
 
-    URL = request.form['url']
+    try:
+        data = json.loads(request.data) # for React
 
-    int8 = True if request.form['int8'] == 'True' else False
+    except:
+        data = request.form  # for postman
 
-    type = 1 if request.form['type'] == '1' else 2
+    URL = data['url']
+
+    int8 = True if data['int8'] == 'True' else False
+
+    type = 1 if data['type'] == '1' else 2
 
     classes = CLASSES1 if type == 1 else CLASSES2
-    print(classes)
-    img, im = transform(URL)
+
+
+    img, im = url_to_image(URL)
 
     MODEL_PATH = f'tflite_models/custom_int80{type}.tflite' if int8 else f'tflite_models/custom0{type}.tflite'
     YOLO = Yolo(model_path = MODEL_PATH, CLASSES = classes, int8 = int8)
@@ -52,7 +59,7 @@ def urlRoute():
 
     YOLO.pred(im)
     YOLO.extract_results()
-    YOLO.return_bbox()
+    YOLO.return_bbox(iou_threshold = 0.0)
     data = YOLO.return_results(H, W)
 
     del YOLO
