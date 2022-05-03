@@ -9,7 +9,8 @@ from flask_cors import CORS
 # CLASS IMPORTS
 from YOLO import Yolo
 
-CLASSES = [ "Bird", "Cat", "Dog", "Flower", "Face" ]  # class names
+CLASSES1 = [ "Bird", "Cat", "Dog", "Flower", "Face" ]  # class names for model 1
+CLASSES2 = ["Insect", "Fish", "Fast_food", "Animal", "Fruit", "Traffic_light", "Vehicle_registration_plate", "Car", "Weapon"]
 
 app = Flask(__name__)
 cors = CORS(app)
@@ -29,10 +30,14 @@ def urlRoute():
 
     int8 = True if request.form['int8'] == 'True' else False
 
+    type = 1 if request.form['type'] == '1' else 2
+
+    classes = CLASSES1 if type == 1 else CLASSES2
+    print(classes)
     img, im = transform(URL)
 
-    MODEL_PATH = 'tflite_models/custom_int800.tflite' if int8 else 'tflite_models/custom01.tflite'
-    YOLO = Yolo(model_path = MODEL_PATH, CLASSES = CLASSES, int8 = int8)
+    MODEL_PATH = f'tflite_models/custom_int80{type}.tflite' if int8 else f'tflite_models/custom0{type}.tflite'
+    YOLO = Yolo(model_path = MODEL_PATH, CLASSES = classes, int8 = int8)
 
     H = img.shape[0]
     W = img.shape[1]
