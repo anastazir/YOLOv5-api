@@ -9,6 +9,14 @@ from flask_cors import CORS
 # CLASS IMPORTS
 from YOLO import Yolo
 
+# FUNCTION IMPORTS
+from helper.base_to_array import base_to_array
+from helper.url_to_image import url_to_image
+
+app = Flask(__name__)
+cors = CORS(app)
+app.config['CORS_HEADERS'] = 'Content-Type'
+
 CLASSES1 = [ "Bird", "Cat", "Dog", "Flower", "Face" ]  # class names for model 1
 CLASSES2 = ["Insect", "Fish", "Fast_food", "Animal", "Fruit", "Traffic_light", "Vehicle_registration_plate", "Car", "Weapon"]
 
